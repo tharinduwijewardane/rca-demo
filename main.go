@@ -65,12 +65,6 @@ func main() {
 	http.HandleFunc("/health", handleHealth)
 
 	log.Printf("Integration Service starting on port 9090...")
-	log.Printf("Endpoints:")
-	log.Printf("  - Main: POST /api/process")
-	log.Printf("  - Auth: POST /auth/validate")
-	log.Printf("  - Database: GET /database/fetch")
-	log.Printf("  - Notification: POST /notification/send")
-	log.Printf("  - Health: GET /health")
 
 	if err := http.ListenAndServe(":9090", nil); err != nil {
 		log.Fatal(err)
