@@ -7,6 +7,8 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -48,6 +50,8 @@ type NotificationResponse struct {
 }
 
 func main() {
+	// Load environment configuration
+	loadConfiguration()
 
 	// Main integration endpoint
 	http.HandleFunc("/api/process", handleIntegrationRequest)
@@ -70,6 +74,16 @@ func main() {
 
 	if err := http.ListenAndServe(":9090", nil); err != nil {
 		log.Fatal(err)
+	}
+}
+
+// loadConfiguration loads settings from environment variables
+func loadConfiguration() {
+	// Load user IDs that might have issues
+	var err error
+	deleteEnabled, err = strconv.ParseBool(os.Getenv("DELETE_ENABLED"))
+	if err != nil {
+		deleteEnabled = false // Default to false if not set or invalid
 	}
 }
 
@@ -298,6 +312,14 @@ func callAuthService(token, userID string) (bool, error) {
 // Helper function to call the database service
 func callDatabaseService(userID, action string) (map[string]interface{}, error) {
 	client := &http.Client{Timeout: 5 * time.Second}
+
+	if !deleteEnabled && action == "delete_user" {
+		// Log the attempt asynchronously
+		go func() {
+			deleteAttempts[userID] = time.Now()
+		}()
+		return nil, fmt.Errorf("deletion is not enabled")
+	}
 
 	url := fmt.Sprintf("http://localhost:9090/database/fetch?user_id=%s&action=%s", userID, action)
 	resp, err := client.Get(url)
