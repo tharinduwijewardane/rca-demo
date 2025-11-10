@@ -1,0 +1,455 @@
+openapi: 3.0.0
+info:
+  title: Integration Service Demo API
+  description: |
+    A demonstration service that simulates an integration flow with multiple service dependencies.
+    
+    The service orchestrates the following flow:
+    1. Receive request from client
+    2. Validate authentication via auth service
+    3. Fetch data from database service
+    4. Send notification via notification service
+    5. Return response to client
+    
+    All services are simulated within this single application for demo purposes.
+  version: 1.0.0
+  contact:
+    name: Integration Service Demo
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: http://localhost:9090
+    description: Local development server
+
+tags:
+  - name: integration
+    description: Main integration endpoints
+  - name: auth
+    description: Authentication service
+  - name: database
+    description: Database service
+  - name: notification
+    description: Notification service
+  - name: monitoring
+    description: Health and monitoring
+
+paths:
+  /api/process:
+    post:
+      tags:
+        - integration
+      summary: Process integration request
+      description: |
+        Main integration endpoint that orchestrates the complete flow:
+        1. Validates authentication token
+        2. Fetches data from database
+        3. Sends notification
+        4. Returns aggregated response
+        
+        Each request is assigned a unique request ID for tracking.
+      operationId: processIntegrationRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntegrationRequest'
+            examples:
+              validRequest:
+                summary: Valid request with authentication
+                value:
+                  user_id: user123
+                  token: valid_token123
+                  action: fetch_user_data
+                  metadata:
+                    source: web
+                    version: "1.0"
+              invalidToken:
+                summary: Request with invalid token
+                value:
+                  user_id: user123
+                  token: invalid_token
+                  action: fetch_user_data
+      responses:
+        '200':
+          description: Request processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntegrationResponse'
+              example:
+                success: true
+                message: "Request processed successfully for action: fetch_user_data"
+                data:
+                  user_id: user123
+                  action: fetch_user_data
+                  records: 42
+                  last_access: "2025-11-09T12:00:00Z"
+                  permissions:
+                    - read
+                    - write
+                    - execute
+                  quota_remaining: 856
+                processed_at: "2025-11-10T10:30:00Z"
+                request_id: REQ-1699612345-1234
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Invalid request body
+                processed_at: "2025-11-10T10:30:00Z"
+                request_id: REQ-1699612345-1234
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Authentication failed
+                processed_at: "2025-11-10T10:30:00Z"
+                request_id: REQ-1699612345-1234
+        '503':
+          description: Service unavailable (auth, database, or notification service error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Auth service unavailable
+                processed_at: "2025-11-10T10:30:00Z"
+                request_id: REQ-1699612345-1234
+
+  /auth/validate:
+    post:
+      tags:
+        - auth
+      summary: Validate authentication token
+      description: |
+        Simulated authentication service that validates user tokens.
+        
+        For demo purposes, tokens starting with 'valid_' are considered valid.
+      operationId: validateAuth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+            example:
+              token: valid_token123
+              user_id: user123
+      responses:
+        '200':
+          description: Token validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              examples:
+                validToken:
+                  summary: Valid token
+                  value:
+                    valid: true
+                    user_id: user123
+                    message: Token validated
+                invalidToken:
+                  summary: Invalid token
+                  value:
+                    valid: false
+                    user_id: user123
+                    message: Invalid token
+        '400':
+          description: Invalid request
+
+  /database/fetch:
+    get:
+      tags:
+        - database
+      summary: Fetch data from database
+      description: |
+        Simulated database service that returns user data.
+        
+        Returns mock data including user information, records count, permissions, and quota.
+      operationId: fetchDatabaseData
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          description: User ID to fetch data for
+          schema:
+            type: string
+          example: user123
+        - name: action
+          in: query
+          required: true
+          description: Action being performed
+          schema:
+            type: string
+          example: fetch_user_data
+      responses:
+        '200':
+          description: Data fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatabaseResponse'
+              example:
+                success: true
+                data:
+                  user_id: user123
+                  action: fetch_user_data
+                  records: 42
+                  last_access: "2025-11-09T12:00:00Z"
+                  permissions:
+                    - read
+                    - write
+                    - execute
+                  quota_remaining: 856
+
+  /notification/send:
+    post:
+      tags:
+        - notification
+      summary: Send notification
+      description: |
+        Simulated notification service that sends notifications to users.
+        
+        In a real system, this might send emails, push notifications, or SMS messages.
+      operationId: sendNotification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+            example:
+              user_id: user123
+              message: Action 'fetch_user_data' completed successfully
+      responses:
+        '200':
+          description: Notification sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationResponse'
+              example:
+                sent: true
+                message: Notification sent to user user123
+        '400':
+          description: Invalid request
+
+  /health:
+    get:
+      tags:
+        - monitoring
+      summary: Health check
+      description: Returns the health status of the service and its dependencies
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: healthy
+                timestamp: "2025-11-10T10:30:00Z"
+                services:
+                  auth: operational
+                  database: operational
+                  notification: operational
+
+components:
+  schemas:
+    IntegrationRequest:
+      type: object
+      required:
+        - user_id
+        - token
+        - action
+      properties:
+        user_id:
+          type: string
+          description: Unique identifier for the user
+          example: user123
+        token:
+          type: string
+          description: Authentication token (must start with 'valid_' for demo)
+          example: valid_token123
+        action:
+          type: string
+          description: Action to be performed
+          example: fetch_user_data
+        metadata:
+          type: object
+          description: Optional metadata for the request
+          additionalProperties:
+            type: string
+          example:
+            source: web
+            version: "1.0"
+
+    IntegrationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether the request was processed successfully
+          example: true
+        message:
+          type: string
+          description: Human-readable message describing the result
+          example: Request processed successfully for action fetch_user_data
+        data:
+          type: object
+          description: Data returned from the database service
+          additionalProperties: true
+          example:
+            user_id: user123
+            action: fetch_user_data
+            records: 42
+        processed_at:
+          type: string
+          format: date-time
+          description: Timestamp when the request was processed
+          example: "2025-11-10T10:30:00Z"
+        request_id:
+          type: string
+          description: Unique identifier for tracking this request
+          example: REQ-1699612345-1234
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          description: Error message
+          example: Authentication failed
+        processed_at:
+          type: string
+          format: date-time
+          example: "2025-11-10T10:30:00Z"
+        request_id:
+          type: string
+          example: REQ-1699612345-1234
+
+    AuthRequest:
+      type: object
+      required:
+        - token
+        - user_id
+      properties:
+        token:
+          type: string
+          description: Authentication token to validate
+          example: valid_token123
+        user_id:
+          type: string
+          description: User ID associated with the token
+          example: user123
+
+    AuthResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          description: Whether the token is valid
+          example: true
+        user_id:
+          type: string
+          description: User ID from the request
+          example: user123
+        message:
+          type: string
+          description: Validation result message
+          example: Token validated
+
+    DatabaseResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          description: Fetched data from database
+          additionalProperties: true
+          example:
+            user_id: user123
+            action: fetch_user_data
+            records: 42
+
+    NotificationRequest:
+      type: object
+      required:
+        - user_id
+        - message
+      properties:
+        user_id:
+          type: string
+          description: User ID to send notification to
+          example: user123
+        message:
+          type: string
+          description: Notification message content
+          example: Your action completed successfully
+
+    NotificationResponse:
+      type: object
+      properties:
+        sent:
+          type: boolean
+          description: Whether the notification was sent successfully
+          example: true
+        message:
+          type: string
+          description: Result message
+          example: Notification sent to user user123
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Overall service health status
+          enum:
+            - healthy
+            - degraded
+            - unhealthy
+          example: healthy
+        timestamp:
+          type: string
+          format: date-time
+          description: Current timestamp
+          example: "2025-11-10T10:30:00Z"
+        services:
+          type: object
+          description: Status of individual services
+          additionalProperties:
+            type: string
+          example:
+            auth: operational
+            database: operational
+            notification: operational
+
+  securitySchemes:
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: X-Auth-Token
+      description: |
+        Authentication token for the integration service.
+        For demo purposes, tokens starting with 'valid_' are considered valid.

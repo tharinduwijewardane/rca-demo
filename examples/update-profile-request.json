@@ -1,0 +1,11 @@
+{
+  "user_id": "user456",
+  "token": "valid_xyz789",
+  "action": "update_profile",
+  "metadata": {
+    "source": "mobile",
+    "version": "2.0",
+    "device": "iPhone 14"
+  }
+}
+

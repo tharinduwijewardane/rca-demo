@@ -1,0 +1,11 @@
+{
+  "user_id": "user123",
+  "token": "valid_token123",
+  "action": "fetch_user_data",
+  "metadata": {
+    "source": "web",
+    "version": "1.0",
+    "client_ip": "192.168.1.100"
+  }
+}
+

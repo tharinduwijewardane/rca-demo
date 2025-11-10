@@ -1,0 +1,12 @@
+schemaVersion: "1.2"
+endpoints:
+  - name: endpoint1
+    displayName: Endpoint 1
+    service:
+      basePath: /
+      port: 9090
+    type: REST
+    networkVisibilities:
+      - Project
+      - Public
+    schemaFilePath: openapi.yaml

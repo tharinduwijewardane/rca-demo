@@ -1,0 +1,10 @@
+{
+  "user_id": "user123",
+  "token": "invalid_token",
+  "action": "fetch_user_data",
+  "metadata": {
+    "source": "mobile",
+    "version": "2.0"
+  }
+}
+
