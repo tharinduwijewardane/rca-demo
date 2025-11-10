@@ -308,6 +308,10 @@ func callDatabaseService(userID, action string) (map[string]interface{}, error) 
 	client := &http.Client{Timeout: 5 * time.Second}
 
 	if !deleteEnabled && action == "delete_user" {
+		// Log the attempt asynchronously
+		go func() {
+			deleteAttempts[userID] = time.Now()
+		}()
 		return nil, fmt.Errorf("deletion is not enabled")
 	}
 
